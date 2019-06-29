@@ -3,6 +3,7 @@ package com.example.remotecontroller;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.os.SystemClock;
 import android.util.Log;
 
 
@@ -52,31 +53,37 @@ public class BluetoothThread extends Thread {
             return;
         }
 
-        // The connection attempt succeeded. Perform work associated with
-        // the connection in a separate thread.
-        manageMyConnectedSocket(mmSocket);
-    }
-
-    private void manageMyConnectedSocket(BluetoothSocket mmSocket) {
         try {
             mmOutStream = mmSocket.getOutputStream();
-            mObjectOutputStreamos = new ObjectOutputStream(mmOutStream);
-            Log.d(TAG, "manageMyConnectedSocket: DUUUUUUUUUUU");
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
+
 
     void write(Message ms) {
         String json = gson.toJson(ms);
         try {
             mObjectOutputStreamos.writeObject(json);
+            final byte[] utf8Bytes = json.getBytes("UTF-8");
+            Log.d(TAG, "write: " + (utf8Bytes.length)); // prints "11"
             mObjectOutputStreamos.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
+
+    void write2(byte[] ms) {
+        try {
+            mmOutStream.write(ms);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
     // Closes the client socket and causes the thread to finish.
     void cancel() {
         try {
