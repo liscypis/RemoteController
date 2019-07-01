@@ -7,9 +7,13 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -52,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int mPrevY = 0; // poprzednia wspolrzedna Y
     private boolean mFirstTouch = true;
     private boolean mPress = false;
-    private byte[] array = new byte[6];
+    private byte[] array = new byte[7];
     private int x, y;
 
 
@@ -159,30 +163,46 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (mIsConnected) {
-            x = (int) event.getX() - mPrevX;
-            y = (int) event.getY() - mPrevY;
-            mPrevX = (int) event.getX();
-            mPrevY = (int) event.getY();
-            if (!mFirstTouch) { // jak jest pierwsze dotkniecie to nie wysyla wiadomosci
-                if (x != 0 && y != 0) { // jak x,y sa rozne od 0 to wysyla
+            if (event.getPointerCount() > 1) {
+                y = (int) event.getY() - mPrevY;
+                mPrevY = (int) event.getY();
+                if(y > 2){
+                    clearArray();
+                    array[6] = (byte) 1;
+                    bluetoothThread.write2(array);
+                }else if(y < -2) {
+                    clearArray();
+                    array[6] = (byte) -1;
+                    bluetoothThread.write2(array);
+                }
+                Log.d(TAG, "onTouchEvent: MULTI y: " + y);
+            } else {
+                x = (int) event.getX() - mPrevX;
+                y = (int) event.getY() - mPrevY;
+                mPrevX = (int) event.getX();
+                mPrevY = (int) event.getY();
+                if (!mFirstTouch) { // jak jest pierwsze dotkniecie to nie wysyla wiadomosci
+                    if (x != 0 && y != 0) { // jak x,y sa rozne od 0 to wysyla
 //                Message ms = new Message();
 //                ms.setmX(x);
 //                ms.setmY(y);
 //                bluetoothThread.write(ms);
-                    clearArray();
-                    array[0] = (byte) x;
-                    array[1] = (byte) y;
+                        clearArray();
+                        array[0] = (byte) x;
+                        array[1] = (byte) y;
 
 //                Log.d(TAG, "onTouchEvent: "+ array[0] + " " + array[1] + " size "+array.length);
-                    if (abs(x) > 1 || abs(y) > 1) {
-                        new Thread(() -> {
-                            bluetoothThread.write2(array);
-                        }).start();
+                        if (abs(x) > 1 || abs(y) > 1) {
+                            new Thread(() -> {
+                                bluetoothThread.write2(array);
+                            }).start();
+                        }
                     }
-                }
-            } else
-                mFirstTouch = false;
-//        Log.d(TAG, "onTouchEvent: X" + x + " Y " + y);
+                } else
+                    mFirstTouch = false;
+//                  Log.d(TAG, "onTouchEvent: X" + x + " Y " + y);
+
+            }
             if (event.getAction() == ACTION_UP) {
                 mFirstTouch = true;
 //            Log.d(TAG, "onTouchEvent: UPUPUP");
@@ -220,7 +240,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.lpmButton: {
                 Log.d(TAG, "onClick: LPM");
                 if (mPress) {
-                    mLpmBnt.setBackgroundColor(Color.GRAY); //TODO zamiana ikonki
+                    mLpmBnt.getBackground().clearColorFilter();
                     sendButton(1, false, true); // zwalniamy lewy przycisk
                     mPress = false;
                 } else {
@@ -239,7 +259,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public boolean onLongClick(View v) {
         if (v.getId() == R.id.lpmButton) {
-            mLpmBnt.setBackgroundColor(Color.RED);//TODO zamiana ikonki
+            mLpmBnt.getBackground().setColorFilter(ContextCompat.getColor(this, R.color.colorAccent), PorterDuff.Mode.MULTIPLY);
             sendButton(1, true, false);
             Log.d(TAG, "onLongClick: xxx");
             mPress = true;
