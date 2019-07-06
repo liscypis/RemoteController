@@ -3,13 +3,9 @@ package com.example.remotecontroller;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
@@ -29,7 +25,6 @@ import android.widget.Toast;
 import android.support.v7.widget.Toolbar;
 
 import java.util.Arrays;
-import java.util.Set;
 
 import static android.view.KeyEvent.ACTION_UP;
 import static java.lang.Math.abs;
@@ -37,11 +32,6 @@ import static java.lang.Math.abs;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, KeyEvent.Callback, View.OnLongClickListener {
 
-    private static final int REQUEST_ENABLE_BT = 1;
-    private static final int REQUEST_CONNECT = 2;
-    private static final int CONNECT_STATUS = 4;
-    private static final String DEVICE_ADDRESS = "device_address";
-    private static final String MESSAGE_STATUS = "status";
     private static final String TAG = "MainActivity";
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothThread bluetoothThread;
@@ -83,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         if (!bluetoothAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            startActivityForResult(enableBtIntent, Constants.REQUEST_ENABLE_BT);
         }
 
         init();
@@ -101,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.connectBNT: {
                 Log.d(TAG, "onOptionsItemSelected: click");
                 Intent intent = new Intent(this, DeviceList.class);
-                startActivityForResult(intent, REQUEST_CONNECT);
+                startActivityForResult(intent, Constants.REQUEST_CONNECT);
                 return true;
             }
 
@@ -129,9 +119,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case CONNECT_STATUS: {
-                    String s = msg.getData().getString(MESSAGE_STATUS);
-                    if (s.equals("connected"))
+                case Constants.CONNECT_STATUS: {
+                    String s = msg.getData().getString(Constants.MESSAGE_STATUS);
+                    if (s.equals(Constants.CONNECTED))
                         activeApp();
 
                     Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
@@ -144,16 +134,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (mIsConnected) {
-            Log.d(TAG, "onKeyDown: " + keyCode + " event " + event.getUnicodeChar());
+//            Log.d(TAG, "onKeyDown: " + keyCode + " event " + event.getUnicodeChar());
             int key = event.getUnicodeChar();
-            Log.d(TAG, " key " + key);
+//            Log.d(TAG, " key " + key);
             clearArray();
             array[5] = (byte) key;
             if (key != 0) {
-                bluetoothThread.write2(array);
+                bluetoothThread.write(array);
             } else if (keyCode == 67) {
                 array[5] = (byte) 8;
-                bluetoothThread.write2(array); // BACK_SPACE 8
+                bluetoothThread.write(array); // BACK_SPACE 8
             }
         }
         return super.onKeyDown(keyCode, event);
@@ -163,41 +153,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (mIsConnected) {
-            if (event.getPointerCount() > 1) {
+            if (event.getPointerCount() > 1) { // do scrolla
                 y = (int) event.getY() - mPrevY;
                 mPrevY = (int) event.getY();
                 if(y > 2){
                     clearArray();
                     array[6] = (byte) 1;
-                    bluetoothThread.write2(array);
+                    bluetoothThread.write(array);
                 }else if(y < -2) {
                     clearArray();
                     array[6] = (byte) -1;
-                    bluetoothThread.write2(array);
+                    bluetoothThread.write(array);
                 }
-                Log.d(TAG, "onTouchEvent: MULTI y: " + y);
-            } else {
+//                Log.d(TAG, "onTouchEvent: MULTI y: " + y);
+            } else { // do myszki
                 x = (int) event.getX() - mPrevX;
                 y = (int) event.getY() - mPrevY;
                 mPrevX = (int) event.getX();
                 mPrevY = (int) event.getY();
                 if (!mFirstTouch) { // jak jest pierwsze dotkniecie to nie wysyla wiadomosci
-                    if (x != 0 && y != 0) { // jak x,y sa rozne od 0 to wysyla
-//                Message ms = new Message();
-//                ms.setmX(x);
-//                ms.setmY(y);
-//                bluetoothThread.write(ms);
-                        clearArray();
-                        array[0] = (byte) x;
-                        array[1] = (byte) y;
-
-//                Log.d(TAG, "onTouchEvent: "+ array[0] + " " + array[1] + " size "+array.length);
-                        if (abs(x) > 1 || abs(y) > 1) {
-                            new Thread(() -> {
-                                bluetoothThread.write2(array);
-                            }).start();
+                        if (abs(x) > 2 || abs(y) > 2) { // jak x,y sa wieksze od 2 to wysyla
+                            bluetoothThread.write(array);
+                            clearArray();
+                            array[0] = (byte) x;
+                            array[1] = (byte) y;
                         }
-                    }
+//                        Log.d(TAG, "onTouchEvent: "+ array[0] + " " + array[1] + " size "+array.length);
                 } else
                     mFirstTouch = false;
 //                  Log.d(TAG, "onTouchEvent: X" + x + " Y " + y);
@@ -217,7 +198,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Log.d(TAG, "onStop:");
         if (mIsConnected) {
             byte[] ms = {1};
-            bluetoothThread.write2(ms);
+            bluetoothThread.write(ms);
         }
 
         if (bluetoothThread != null) {
@@ -240,7 +221,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.lpmButton: {
                 Log.d(TAG, "onClick: LPM");
                 if (mPress) {
-                    mLpmBnt.getBackground().clearColorFilter();
+                    mLpmBnt.getBackground().setColorFilter(ContextCompat.getColor(this, R.color.colorButton), PorterDuff.Mode.MULTIPLY);
                     sendButton(1, false, true); // zwalniamy lewy przycisk
                     mPress = false;
                 } else {
@@ -269,9 +250,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (requestCode == REQUEST_CONNECT) {
+        if (requestCode == Constants.REQUEST_CONNECT) {
             if (resultCode == Activity.RESULT_OK) {
-                String mac = data.getExtras().getString(DEVICE_ADDRESS);
+                String mac = data.getExtras().getString(Constants.DEVICE_ADDRESS);
                 Log.d(TAG, "onActivityResult: funguje?");
                 bluetoothThread = new BluetoothThread(mac, bluetoothAdapter, mHandler);
                 bluetoothThread.start();
@@ -289,7 +270,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         array[3] = (byte) (press ? 1 : 0);
         array[4] = (byte) (release ? 1 : 0);
 
-        bluetoothThread.write2(array);
+        bluetoothThread.write(array);
     }
 
     private void clearArray() {

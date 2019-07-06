@@ -23,6 +23,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:text="LPM"
+        android:backgroundTint="@color/colorButton"
         app:layout_constraintBottom_toBottomOf="@+id/showKeyboardBnt"
         app:layout_constraintEnd_toStartOf="@+id/ppmButton"
         app:layout_constraintTop_toTopOf="@+id/showKeyboardBnt" />
@@ -33,6 +34,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:text="PPM"
+        android:backgroundTint="@color/colorButton"
         app:layout_constraintBottom_toBottomOf="@+id/showKeyboardBnt"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/showKeyboardBnt" />

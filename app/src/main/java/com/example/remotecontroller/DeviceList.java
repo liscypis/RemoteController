@@ -29,8 +29,6 @@ import static android.content.ContentValues.TAG;
 
 public class DeviceList extends Activity implements AdapterView.OnItemClickListener, View.OnClickListener {
 
-    private static final String DEVICE_ADDRESS = "device_address";
-    private static final int PERMISSION_REQUEST_CODE = 999;
     private BluetoothAdapter bluetoothAdapter;
     private ArrayAdapter<String> foundDevicesArrayAdapter;
     private Button mScanBnt;
@@ -90,7 +88,7 @@ public class DeviceList extends Activity implements AdapterView.OnItemClickListe
         } else {
             ActivityCompat.requestPermissions(this,
                     new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    PERMISSION_REQUEST_CODE);
+                    Constants.PERMISSION_REQUEST_CODE);
             Log.d(TAG, "getLocationPermission: FALSE");
         }
     }
@@ -102,13 +100,13 @@ public class DeviceList extends Activity implements AdapterView.OnItemClickListe
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
-            case PERMISSION_REQUEST_CODE: {
+            case Constants.PERMISSION_REQUEST_CODE: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && permissions[0].equals(Manifest.permission.ACCESS_FINE_LOCATION)) {
                     Log.i(TAG, "onRequestPermissionsResult: cos nie działa");
                 } else {
                     ActivityCompat.requestPermissions(this,
                             new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                            PERMISSION_REQUEST_CODE);
+                            Constants.PERMISSION_REQUEST_CODE);
                     Log.d(TAG, "onRequestPermissionsResult: nie wybrał");
                 }
             }
@@ -118,13 +116,11 @@ public class DeviceList extends Activity implements AdapterView.OnItemClickListe
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         bluetoothAdapter.cancelDiscovery();
-
         String info = ((TextView) view).getText().toString();
         String address = info.substring(info.length() - 17);
 
         Intent intent = new Intent();
-        intent.putExtra(DEVICE_ADDRESS, address);
-        // Set result and finish this Activity
+        intent.putExtra(Constants.DEVICE_ADDRESS, address);
         setResult(Activity.RESULT_OK, intent);
         finish();
     }
@@ -138,7 +134,7 @@ public class DeviceList extends Activity implements AdapterView.OnItemClickListe
                 mFindDevPB.setVisibility(View.VISIBLE);
             }
             if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                Toast.makeText(getApplicationContext(), "Zkonczono skanowanie", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Zakonczono skanowanie", Toast.LENGTH_SHORT).show();
                 mFindDevPB.setVisibility(View.GONE);
                 mFoundTV.setVisibility(View.VISIBLE);
                 mFoundTV.append(": " + foundDevicesArrayAdapter.getCount());
@@ -148,7 +144,7 @@ public class DeviceList extends Activity implements AdapterView.OnItemClickListe
                 if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
                     mFoundTV.setVisibility(View.VISIBLE);
                     Log.i("Device Name: ", "device " + device.getName());
-                    Log.i("deviceHardwareAddress ", "hard" + device.getAddress());
+                    Log.i("deviceHardwareAddress ", "mac" + device.getAddress());
                     foundDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
                 }
 
