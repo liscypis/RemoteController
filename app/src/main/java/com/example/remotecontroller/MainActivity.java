@@ -173,10 +173,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mPrevY = (int) event.getY();
                 if (!mFirstTouch) { // jak jest pierwsze dotkniecie to nie wysyla wiadomosci
                         if (abs(x) > 2 || abs(y) > 2) { // jak x,y sa wieksze od 2 to wysyla
-                            bluetoothThread.write(array);
                             clearArray();
                             array[0] = (byte) x;
                             array[1] = (byte) y;
+                            bluetoothThread.write(array);
                         }
 //                        Log.d(TAG, "onTouchEvent: "+ array[0] + " " + array[1] + " size "+array.length);
                 } else
